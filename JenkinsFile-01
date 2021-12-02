@@ -1,0 +1,33 @@
+pipeline {
+	agent any
+	tools {
+		maven 'Maven'
+	}
+	triggers {
+		pollSCM '* * * * *'
+	}
+	parameters {
+	  choice choices: ['develop', 'master', 'micro', 'release'], description: 'Select the Branch to Run this Job', name: 'branch'
+	}
+
+
+	stages {
+		stage('Pull The Code') {
+			steps {
+			    git branch: "${params.branch}", credentialsId: 'github-creds', url: 'https://github.com/faiz1985/java-db-Login.git'
+			}
+		}
+		
+		stage('Build The Code') {
+			steps {
+			    sh 'mvn clean package'
+			}
+		}
+		
+		stage('Deploy The Code') {
+			steps {
+			    deploy adapters: [tomcat8(credentialsId: 'tomcat-cred', path: '', url: 'http://184.72.188.138:8080')], contextPath: 'login', onFailure: false, war: '**/*.war'
+			}
+		}
+	}
+}
